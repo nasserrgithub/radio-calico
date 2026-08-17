@@ -72,18 +72,40 @@ sqlite3 radiocalico.db < schema.sql
 
 - `templates/index.html` — markup only (Jinja2)
 - `static/css/style.css` — all styling
-- `static/js/app.js` — all page behavior (plain static JS); the HLS stream
-  URL is passed in via a `data-stream-url` attribute rather than templated
-  into a script
+- `static/js/app.js` — page behavior and DOM wiring, loaded as an ES module;
+  the HLS stream URL is passed in via a `data-stream-url` attribute rather
+  than templated into a script
+- `static/js/ratings.js` — pure ratings logic (track-key derivation, request
+  building/response shaping, vote-change check) with no DOM dependency,
+  imported by `app.js`
+
+## Testing
+
+**Backend** (pytest, hits Flask's test client against a temp SQLite db):
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest
+```
+
+**Frontend** (Vitest, unit tests for `static/js/ratings.js`):
+
+```bash
+npm install
+npm test
+```
 
 ## Project layout
 
 ```
 app.py                      Flask app (routes, ratings, nowplaying proxy)
 schema.sql                  SQLite schema for the ratings table
+tests/                      pytest suite for the Flask backend
 templates/index.html        Page markup
 static/css/style.css        Styling
-static/js/app.js            Player + now-playing + ratings behavior
+static/js/app.js            Player + now-playing behavior, DOM wiring
+static/js/ratings.js        Pure ratings logic, unit tested with Vitest
+static/js/ratings.test.js   Vitest tests for ratings.js
 static/img/                 Logo and image assets
 RadioCalico_Style_Guide.txt Brand colors, type scale, component states
 RadioCalicoLayout.png       Structural layout reference
@@ -98,6 +120,6 @@ Assistant.
 
 ## Notes
 
-- There is no test suite or linter configured.
+- There is no linter configured.
 - `legacy-node/` is not part of active development — do not run or modify it
   as part of feature work.
