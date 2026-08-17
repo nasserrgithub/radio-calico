@@ -14,7 +14,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Create venv
-        run: python -m venv .venv
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
       - name: Install backend dependencies
         run: .venv/bin/pip install -r requirements-dev.txt
       - name: Run backend tests
