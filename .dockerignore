@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+node_modules
+__pycache__
+.pytest_cache
+*.pyc
+*.db
+legacy-node
+.claude
+Dockerfile
+docker-compose*.yml
+.dockerignore

@@ -1,0 +1,28 @@
+services:
+  app-prod:
+    build:
+      context: .
+      target: prod
+    image: radiocalico:prod
+    ports:
+      - "5000:5000"
+    volumes:
+      - radiocalico-data:/app/data
+    restart: unless-stopped
+    profiles: ["prod"]
+
+  app-dev:
+    build:
+      context: .
+      target: dev
+    image: radiocalico:dev
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - radiocalico-dev-data:/app/data
+    profiles: ["dev"]
+
+volumes:
+  radiocalico-data:
+  radiocalico-dev-data:

@@ -18,6 +18,7 @@ thumbs-up/down the current track (persisted in SQLite).
 
 - Python 3
 - Flask (see `requirements.txt`)
+- Docker + Docker Compose (optional — see [Docker](#docker) for a container-only setup)
 
 ## Setup
 
@@ -41,6 +42,24 @@ changes in a browser.
 
 Track ratings are stored in `radiocalico.db` (SQLite), created automatically
 on first run.
+
+## Docker
+
+The `Dockerfile` has two build targets, `dev` and `prod`, run via
+`docker-compose.yml` profiles:
+
+```bash
+# dev: Flask debug server with reload, code bind-mounted from the repo
+docker compose --profile dev up --build
+
+# prod: gunicorn, non-root user, only the runtime files baked into the image
+docker compose --profile prod up --build -d
+```
+
+Both serve at `http://127.0.0.1:5000`. The SQLite file lives in a named
+volume (`/app/data/radiocalico.db`) so ratings persist across container
+recreation. Run the backend test suite inside the dev container with
+`docker compose --profile dev exec app-dev python -m pytest`.
 
 ```bash
 # Inspect
@@ -100,6 +119,8 @@ npm test
 ```
 app.py                      Flask app (routes, ratings, nowplaying proxy)
 schema.sql                  SQLite schema for the ratings table
+Dockerfile                  Multi-stage build: base / dev (Flask debug) / prod (gunicorn)
+docker-compose.yml          dev/prod profiles, port 5000, named volume for the DB
 tests/                      pytest suite for the Flask backend
 templates/index.html        Page markup
 static/css/style.css        Styling
