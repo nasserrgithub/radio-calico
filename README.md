@@ -1,5 +1,7 @@
 # RadioCalico
 
+[![CI](https://github.com/nasserrgithub/radio-calico/actions/workflows/ci.yml/badge.svg)](https://github.com/nasserrgithub/radio-calico/actions/workflows/ci.yml)
+
 RadioCalico is a single-page live-radio player. A Flask backend renders one
 page that streams HLS audio via [hls.js](https://github.com/video-dev/hls.js/),
 shows now-playing metadata polled from an external CDN, and lets listeners
