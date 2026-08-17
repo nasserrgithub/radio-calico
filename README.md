@@ -142,6 +142,16 @@ npm install
 npm test
 ```
 
+## Security scanning
+
+```bash
+make security      # both, see below
+make security-py   # pip-audit against requirements.txt, requirements-dev.txt, requirements-prod.txt
+make security-js   # npm audit
+```
+
+Both fail (non-zero exit) if a known vulnerability is found in a dependency.
+
 ## Project layout
 
 ```
