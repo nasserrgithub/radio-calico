@@ -90,6 +90,12 @@ RadioCalicoLayout.png       Structural layout reference
 legacy-node/                Old Express/EJS/sqlite3 app, kept for reference only
 ```
 
+## CI
+
+GitHub Actions runs an automated Claude code review on every pull request,
+and a `@claude` mention on a PR or issue comment triggers the Claude PR
+Assistant.
+
 ## Notes
 
 - There is no test suite or linter configured.
