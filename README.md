@@ -58,7 +58,9 @@ sqlite3 radiocalico.db < schema.sql
 ## Docker
 
 The `Dockerfile` has `dev` and `prod` build targets, run via
-`docker-compose.yml` profiles.
+`docker-compose.yml` profiles. `make help` lists shortcuts (`make dev`,
+`make prod`, `make dev-down`, `make prod-down`, `make prod-clean`, `make
+test`, ...) that wrap the commands below.
 
 **Dev** — Flask debug server with reload, code bind-mounted from the repo,
 SQLite in a named volume (`/app/data/radiocalico.db`):
