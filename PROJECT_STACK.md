@@ -1,0 +1,25 @@
+# RadioCalico — Project Stack & Infrastructure
+
+RadioCalico is a Python/Flask app (run via `.venv/bin/python app.py` on port 5000, dev server only — not debug/auto-reload, so template/static edits require restarting the process) serving a single branded live-radio player page at `/`, with Jinja2 templates for rendering.
+
+History: migrated 2026-08-16 from Express.js + EJS + SQLite to Flask because the user has stronger Python fluency. The old Node app lives in `legacy-node/` (kept for reference only). The Flask app originally kept an unrelated `items` CRUD prototype at `/`; that was removed and its `/radio` player content merged into `/`.
+
+**SQLite is active infrastructure (corrects a prior note that called it unused).** As of 2026-08-17, `app.py` uses `radiocalico.db` (schema in `schema.sql`) for a track-rating feature: a `ratings` table (`track_key`, `artist`, `title`, `client_id`, `rating` in `('up','down')`, unique per `(track_key, client_id)`) backs `GET/POST /api/ratings`, letting listeners thumbs-up/down the currently playing track. `client_id` is a SHA-256 fingerprint of `ip:user_agent:uid`, where `uid` is a random token stored in a 2-year `rc_uid` HttpOnly cookie (set in `before_request`/`after_request` hooks) — this is how repeat ratings from the same browser are recognized without real auth.
+
+Key files:
+- `app.py` — Flask app; `/` renders the player+widgets page; `/api/nowplaying` proxies the stream host's now-playing metadata JSON (server-side fetch via stdlib `urllib`, to dodge CORS since the metadata endpoint has no `Access-Control-Allow-Origin` header); `/api/ratings` (GET/POST) reads/writes the SQLite ratings table
+- `templates/index.html` — the live player page (Jinja2), fully restyled 2026-08-17 to follow `RadioCalico_Style_Guide.txt` and the layout in `RadioCalicoLayout.png` (see below)
+- `static/img/logo.png` — RadioCalico logo, identical bytes to `RadioCalicoLogoTM.png` at the repo root (verified via md5sum)
+- `schema.sql`, `radiocalico.db` — live SQLite schema/data for the ratings feature, not leftovers
+- `requirements.txt` — just `flask` (no extra HTTP client dep needed; metadata fetch uses stdlib `urllib`)
+- `.venv/` — project-local virtualenv; system has no system-wide pip/venv, so pip was bootstrapped manually via `get-pip.py` (no sudo used)
+- `stream_URL.txt` — HLS stream URL (`https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8`)
+- Metadata endpoint: `https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json` (same host as the stream) — returns `artist`/`title`/`album`/`date`/`bit_depth`/`sample_rate` for the current track plus `prev_artist_N`/`prev_title_N` (N=1..5) for track history; content-type on the CDN's `cover.jpg` is `application/octet-stream` (not `image/jpeg`), which is harmless for an `<img>` tag but worth knowing if debugging fetch/XHR-based image loading
+- Branding source assets: `RadioCalicoLayout.png` (rough two-column layout mock: dark nav, big cover art + track info side by side, dark pill-shaped player bar, mint "previously played" band — used as the structural reference), `RadioCalicoLogoTM.png`, `RadioCalico_Style_Guide.txt` (source of truth for colors/type scale — Mint #D8F2D5, Forest #1F4E23, Teal #38A29D, Orange #EFA63C, Charcoal #231F20, Cream #F5EADA; Montserrat headings, Open Sans body), `RadioCalicoStyle.zip`
+- `legacy-node/` — old Express/EJS app files, kept for reference only
+
+**UI structure (as of the 2026-08-17 redesign):** dark charcoal nav with the logo backed by a mint circle (per the style guide's "place on white/mint circle over dark or busy backgrounds" rule) and mint wordmark; two-column "now playing" section (cover art left, artist as H1/title as H2/album as H3 right, using the guide's exact type scale); a dark pill-shaped player bar (`display:inline-flex; align-self:flex-start` so it sizes to its content instead of stretching the flex column) holding play/pause, a combined elapsed/live-status text, and a volume slider; a full-bleed mint "Previously Played" band; cream footer with mint links on forest text.
+
+**Why:** User wants this to be a focused radio-player app, not a CRUD demo — prototype scaffolding was explicitly removed once the real feature (the player) existed. The actual stream is often 16-bit/44.1kHz source (varies per track) even though the style guide's marketing copy says "24-bit/48kHz lossless" — the page shows both: a dynamic "Source quality" line from `/api/nowplaying`'s `bit_depth`/`sample_rate`, and a static "Stream quality: 24-bit / 48 kHz FLAC · HLS Lossless" line using the guide's brand phrase for the actual delivery format.
+
+**How to apply:** Treat `/` as the one real page. Don't reintroduce the old items table/CRUD or a separate `/radio` route unless asked. SQLite (`schema.sql`/`radiocalico.db`) is live and backs the ratings feature — don't treat it as dead weight or suggest removing it. When editing `templates/index.html` styling, check `RadioCalico_Style_Guide.txt` for the applicable color/type/spacing rule rather than guessing. After editing templates or static files, restart the Flask process (`pkill` + relaunch) before verifying in a browser — it does not auto-reload.

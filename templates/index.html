@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radio Calico — Live Stream</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <nav>
+    <span class="logo-badge">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Radio Calico logo">
+    </span>
+    <span class="brand">Radio Calico</span>
+  </nav>
+
+  <main>
+    <div class="now-playing">
+      <div class="cover-wrap">
+        <img id="npCover" alt="Album art">
+      </div>
+
+      <div class="track-info">
+        <h1 class="track-artist" id="npArtist">—</h1>
+        <h2 class="track-title" id="npTitle">—</h2>
+        <h3 class="track-album" id="npAlbum"></h3>
+
+        <div class="quality-info">
+          <div id="sourceQuality">Source quality: —</div>
+          <div>Stream quality: 24-bit / 48 kHz FLAC · HLS Lossless</div>
+        </div>
+
+        <div class="rating-row" id="ratingRow">
+          <span class="rating-label">Rate this track:</span>
+          <button id="thumbUpBtn" class="thumb-btn" disabled aria-label="Thumbs up">
+            👍 <span id="upCount">0</span>
+          </button>
+          <button id="thumbDownBtn" class="thumb-btn" disabled aria-label="Thumbs down">
+            👎 <span id="downCount">0</span>
+          </button>
+        </div>
+
+        <div class="player-bar">
+          <button id="playBtn" aria-label="Play">
+            <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+          </button>
+          <span class="player-status" id="status">Connecting…</span>
+          <div class="volume">
+            <svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <input type="range" id="volume" min="0" max="100" value="80" aria-label="Volume">
+          </div>
+        </div>
+        <audio id="audio" preload="none" data-stream-url="{{ stream_url }}"></audio>
+      </div>
+    </div>
+
+    <div class="previously-played">
+      <div class="inner">
+        <h2>Previously Played</h2>
+        <ul id="recentList"></ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; <span id="year"></span> <a href="/">Radio Calico</a>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

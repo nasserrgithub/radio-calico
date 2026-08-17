@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RadioCalico Prototype</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 3rem auto; padding: 0 1rem; }
+    li { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; }
+    form.inline { display: inline; }
+    input[type="text"] { padding: 0.4rem; }
+    button { padding: 0.4rem 0.8rem; }
+  </style>
+</head>
+<body>
+  <h1>RadioCalico Prototype</h1>
+
+  <p><a href="/radio">&#9654; Listen to the live stream</a></p>
+
+  <form method="post" action="/items">
+    <input type="text" name="name" placeholder="New item" required>
+    <button type="submit">Add</button>
+  </form>
+
+  <ul>
+    <% items.forEach(function(item) { %>
+      <li>
+        <span><%= item.name %> <small>(<%= item.created_at %>)</small></span>
+        <form class="inline" method="post" action="/items/<%= item.id %>/delete">
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+    <% }); %>
+    <% if (items.length === 0) { %>
+      <li>No items yet.</li>
+    <% } %>
+  </ul>
+</body>
+</html>

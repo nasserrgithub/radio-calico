@@ -1,0 +1,318 @@
+:root {
+  --mint: #D8F2D5;
+  --forest: #1F4E23;
+  --teal: #38A29D;
+  --orange: #EFA63C;
+  --charcoal: #231F20;
+  --cream: #F5EADA;
+  --white: #FFFFFF;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--charcoal);
+  background: var(--white);
+}
+
+/* Header (Hero) — dark nav, mint centered logo & wordmark */
+nav {
+  background: var(--charcoal);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.logo-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--mint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.logo-badge img { width: 100%; height: 100%; object-fit: contain; }
+
+nav .brand {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  color: var(--mint);
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+/* Now Playing — 12-col-inspired two column layout */
+.now-playing {
+  display: grid;
+  grid-template-columns: minmax(240px, 380px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.cover-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--cream);
+  box-shadow: 0 4px 16px rgba(31, 78, 35, 0.2);
+}
+
+.cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+h1.track-artist {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 1.2;
+  color: var(--forest);
+  margin: 0;
+  word-break: break-word;
+}
+
+h2.track-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: 2.25rem;
+  line-height: 1.3;
+  color: var(--charcoal);
+  margin: 0;
+  word-break: break-word;
+}
+
+h3.track-album {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+.quality-info {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--forest);
+  font-style: italic;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rating-row .rating-label {
+  font-family: "Open Sans", sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--charcoal);
+}
+
+.thumb-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(31, 78, 35, 0.25);
+  background: var(--white);
+  color: var(--forest);
+  font-family: "Open Sans", sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.thumb-btn:hover:not(:disabled) { background: var(--mint); }
+
+.thumb-btn.active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--white);
+}
+
+.thumb-btn:disabled { cursor: not-allowed; }
+.thumb-btn:disabled:not(.active) { opacity: 0.6; }
+
+/* Player bar */
+.player-bar {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 16px;
+  background: var(--charcoal);
+  border-radius: 999px;
+  padding: 10px 20px;
+  margin-top: 8px;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+#playBtn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--mint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+#playBtn:hover { color: var(--white); }
+#playBtn svg { width: 22px; height: 22px; fill: currentColor; }
+
+.player-status {
+  color: var(--white);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.player-status.live::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--orange);
+  margin-right: 6px;
+  box-shadow: 0 0 0 rgba(239, 166, 60, 0.6);
+  animation: pulse 1.6s infinite;
+}
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239, 166, 60, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(239, 166, 60, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 166, 60, 0); }
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume svg { width: 18px; height: 18px; fill: var(--mint); flex-shrink: 0; }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--teal);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--teal);
+  cursor: pointer;
+}
+
+/* Previously Played — full-bleed mint band */
+.previously-played {
+  background: var(--mint);
+  margin-top: 48px;
+}
+
+.previously-played .inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.previously-played h2 {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: var(--forest);
+  margin: 0 0 16px;
+}
+
+#recentList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#recentList li {
+  font-size: 1rem;
+  color: var(--charcoal);
+}
+
+#recentList .recent-artist {
+  font-weight: 700;
+  color: var(--forest);
+}
+
+#recentList .recent-title {
+  font-style: italic;
+}
+
+footer {
+  background: var(--cream);
+  text-align: center;
+  padding: 24px;
+  font-size: 0.875rem;
+  color: var(--forest);
+}
+
+footer a { color: var(--teal); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .now-playing { grid-template-columns: 1fr; }
+  .cover-wrap { max-width: 380px; margin: 0 auto; }
+  h1.track-artist { font-size: 2.25rem; }
+  h2.track-title { font-size: 1.5rem; }
+  h3.track-album { font-size: 1.1rem; }
+}
