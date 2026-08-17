@@ -1,5 +1,16 @@
+const MAX_TRACK_KEY_LENGTH = 500;
+
 export function deriveTrackKey(nowPlaying) {
   return `${nowPlaying.artist || ''}::${nowPlaying.title || ''}`;
+}
+
+export function isValidTrackKey(trackKey) {
+  return (
+    typeof trackKey === 'string' &&
+    trackKey.length > 0 &&
+    trackKey.length <= MAX_TRACK_KEY_LENGTH &&
+    !/[\r\n]/.test(trackKey)
+  );
 }
 
 export function normalizeRatingResponse(data) {
@@ -11,12 +22,14 @@ export function normalizeRatingResponse(data) {
 }
 
 export async function fetchRatings(fetchImpl, trackKey) {
+  if (!isValidTrackKey(trackKey)) throw new Error('invalid track key');
   const res = await fetchImpl(`/api/ratings?track_key=${encodeURIComponent(trackKey)}`);
   if (!res.ok) throw new Error(`bad status: ${res.status}`);
   return normalizeRatingResponse(await res.json());
 }
 
 export async function postRating(fetchImpl, { trackKey, artist, title, rating }) {
+  if (!isValidTrackKey(trackKey)) throw new Error('invalid track key');
   const res = await fetchImpl('/api/ratings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -27,5 +40,5 @@ export async function postRating(fetchImpl, { trackKey, artist, title, rating })
 }
 
 export function shouldSubmitRating({ trackKey, rating, currentUserRating }) {
-  return Boolean(trackKey) && rating !== currentUserRating;
+  return isValidTrackKey(trackKey) && rating !== currentUserRating;
 }

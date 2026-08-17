@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { deriveTrackKey, fetchRatings, postRating, shouldSubmitRating } from './ratings.js';
+import { deriveTrackKey, fetchRatings, isValidTrackKey, postRating, shouldSubmitRating } from './ratings.js';
 
 describe('deriveTrackKey', () => {
   it('joins artist and title with a separator', () => {
@@ -11,6 +11,25 @@ describe('deriveTrackKey', () => {
   it('falls back to empty strings for missing fields', () => {
     expect(deriveTrackKey({})).toBe('::');
     expect(deriveTrackKey({ artist: 'Solo Artist' })).toBe('Solo Artist::');
+  });
+});
+
+describe('isValidTrackKey', () => {
+  it('accepts a non-empty string within the length limit', () => {
+    expect(isValidTrackKey('artist::title')).toBe(true);
+  });
+
+  it('rejects non-strings, empty strings, and newlines', () => {
+    expect(isValidTrackKey(null)).toBe(false);
+    expect(isValidTrackKey(undefined)).toBe(false);
+    expect(isValidTrackKey('')).toBe(false);
+    expect(isValidTrackKey(42)).toBe(false);
+    expect(isValidTrackKey('artist::ti\ntle')).toBe(false);
+  });
+
+  it('rejects strings over the length limit', () => {
+    expect(isValidTrackKey('a'.repeat(501))).toBe(false);
+    expect(isValidTrackKey('a'.repeat(500))).toBe(true);
   });
 });
 
@@ -62,6 +81,13 @@ describe('fetchRatings', () => {
 
     await expect(fetchRatings(fetchImpl, 'artist::title')).rejects.toThrow('bad status: 500');
   });
+
+  it('throws on an invalid track key without calling fetch', async () => {
+    const fetchImpl = fakeFetch({});
+
+    await expect(fetchRatings(fetchImpl, '')).rejects.toThrow('invalid track key');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });
 
 describe('postRating', () => {
@@ -89,5 +115,14 @@ describe('postRating', () => {
     await expect(
       postRating(fetchImpl, { trackKey: 'artist::title', rating: 'up' })
     ).rejects.toThrow('bad status: 400');
+  });
+
+  it('throws on an invalid track key without calling fetch', async () => {
+    const fetchImpl = fakeFetch({});
+
+    await expect(postRating(fetchImpl, { trackKey: null, rating: 'up' })).rejects.toThrow(
+      'invalid track key'
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
