@@ -1,3 +1,5 @@
+import { deriveTrackKey, fetchRatings, postRating, shouldSubmitRating } from './ratings.js';
+
 const audio = document.getElementById('audio');
 const streamUrl = audio.dataset.streamUrl;
 const playBtn = document.getElementById('playBtn');
@@ -21,10 +23,10 @@ let currentTrackMeta = { artist: '', title: '' };
 
 let currentUserRating = null;
 
-function updateRatingUI(data) {
-  upCount.textContent = data.up ?? 0;
-  downCount.textContent = data.down ?? 0;
-  currentUserRating = data.user_rating || null;
+function updateRatingUI({ up, down, userRating }) {
+  upCount.textContent = up;
+  downCount.textContent = down;
+  currentUserRating = userRating;
   thumbUpBtn.classList.toggle('active', currentUserRating === 'up');
   thumbDownBtn.classList.toggle('active', currentUserRating === 'down');
   thumbUpBtn.disabled = false;
@@ -33,30 +35,25 @@ function updateRatingUI(data) {
 
 async function loadRatings(trackKey) {
   try {
-    const res = await fetch(`/api/ratings?track_key=${encodeURIComponent(trackKey)}`);
-    if (!res.ok) throw new Error('bad status');
-    updateRatingUI(await res.json());
+    updateRatingUI(await fetchRatings(fetch, trackKey));
   } catch (e) {
     // leave last known state, retry on next track/poll
   }
 }
 
 async function submitRating(rating) {
-  if (!lastTrackKey || rating === currentUserRating) return;
+  if (!shouldSubmitRating({ trackKey: lastTrackKey, rating, currentUserRating })) return;
   thumbUpBtn.disabled = true;
   thumbDownBtn.disabled = true;
   try {
-    const res = await fetch('/api/ratings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        track_key: lastTrackKey,
+    updateRatingUI(
+      await postRating(fetch, {
+        trackKey: lastTrackKey,
         artist: currentTrackMeta.artist,
         title: currentTrackMeta.title,
         rating,
-      }),
-    });
-    updateRatingUI(await res.json());
+      })
+    );
   } catch (e) {
     await loadRatings(lastTrackKey);
   }
@@ -206,7 +203,7 @@ async function refreshNowPlaying() {
     npTitle.textContent = data.date ? `${data.title || 'Unknown title'} (${data.date})` : (data.title || 'Unknown title');
     npAlbum.textContent = data.album || '';
 
-    const trackKey = `${data.artist || ''}::${data.title || ''}`;
+    const trackKey = deriveTrackKey(data);
     if (trackKey !== lastTrackKey) {
       lastTrackKey = trackKey;
       currentTrackMeta = { artist: data.artist || '', title: data.title || '' };

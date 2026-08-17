@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 import urllib.error
@@ -11,7 +12,7 @@ from flask import Flask, g, jsonify, render_template, request
 STREAM_URL = "https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8"
 METADATA_URL = "https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json"
 PORT = 5000
-DB_PATH = Path(__file__).parent / "radiocalico.db"
+DB_PATH = Path(os.environ.get("RADIOCALICO_DB_PATH") or Path(__file__).parent / "radiocalico.db")
 UID_COOKIE_NAME = "rc_uid"
 UID_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2  # 2 years
 

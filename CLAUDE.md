@@ -12,7 +12,9 @@ RadioCalico is a single-page live-radio player: a Flask backend renders one Jinj
 - Install deps: `.venv/bin/pip install -r requirements.txt` (just `flask`; no venv/pip exists system-wide, so always use `.venv/bin/...`, not bare `python`/`pip`).
 - Inspect the DB: `sqlite3 radiocalico.db ".tables"` / `.schema ratings`.
 - Reset schema: `sqlite3 radiocalico.db < schema.sql` (drops and recreates `ratings` — destructive, loses existing ratings).
-- No test suite or linter is configured.
+- Backend tests: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m pytest`. The `tests/` suite runs against a temp SQLite db (via `RADIOCALICO_DB_PATH`, set in `tests/conftest.py`), not `radiocalico.db`.
+- Frontend tests: `npm install && npm test` (Vitest). Only `static/js/ratings.js` (pure ratings logic, no DOM) is unit tested — `static/js/app.js` is DOM-wiring glue and isn't covered.
+- No linter is configured.
 
 `legacy-node/` is the old Express/EJS/sqlite3 app, kept for reference only — do not run or modify it as part of feature work.
 
@@ -27,7 +29,8 @@ RadioCalico is a single-page live-radio player: a Flask backend renders one Jinj
 **Frontend — split across three files:**
 - `templates/index.html` — markup only (Jinja2).
 - `static/css/style.css` — all styling, linked via `<link>` in `index.html`.
-- `static/js/app.js` — all page behavior, loaded via `<script src>` (plain static JS, no Jinja templating inside it). The HLS stream URL is the one piece of server-rendered data the JS needs; it's passed via `data-stream-url` on the `<audio>` element rather than templated directly into a script, so `app.js` stays a plain static asset.
+- `static/js/app.js` — page behavior and DOM wiring, loaded via `<script type="module" src>` (plain static JS, no Jinja templating inside it). The HLS stream URL is the one piece of server-rendered data the JS needs; it's passed via `data-stream-url` on the `<audio>` element rather than templated directly into a script, so `app.js` stays a plain static asset.
+- `static/js/ratings.js` — the ratings system's pure logic (track-key derivation, `/api/ratings` request/response shaping, whether a vote should be submitted), factored out with no DOM dependency so it's unit-testable; imported into `app.js`. `app.js` still owns DOM state (`lastTrackKey`, `currentUserRating`) and calls into `ratings.js`'s functions.
 - Audio playback uses `hls.js` against that stream URL, with Safari's native HLS as a fallback path.
 - Now-playing metadata and the recently-played band are refreshed on a poll loop (`refreshNowPlaying`) hitting `/api/nowplaying`; ratings UI (`loadRatings`/`submitRating`) hits `/api/ratings` and is keyed by a `track_key` derived from the current track.
 - The CDN's `cover.jpg` is served as `application/octet-stream`, not `image/jpeg` — harmless in an `<img src>` but relevant if you ever fetch/XHR it instead.
