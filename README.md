@@ -177,9 +177,15 @@ legacy-node/                Old Express/EJS/sqlite3 app, kept for reference only
 
 ## CI
 
-GitHub Actions runs an automated Claude code review on every pull request,
-and a `@claude` mention on a PR or issue comment triggers the Claude PR
-Assistant.
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to
+`master`/`main` and on every pull request: backend tests + `pip-audit`
+(`make test-py`, `make security-py`) in one job, frontend tests + `npm
+audit` (`make test-js`, `make security-js`) in another.
+
+A `@claude` mention on a PR or issue comment triggers the Claude PR
+Assistant (`.github/workflows/claude.yml`) on demand — there is no automatic
+Claude code review on PRs anymore; that ran (and cost API usage) on every
+PR unconditionally, so it was removed.
 
 ## Notes
 
