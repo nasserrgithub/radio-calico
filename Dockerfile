@@ -19,12 +19,13 @@ ENV FLASK_APP=app.py \
 EXPOSE 5000
 CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
 
-# --- prod: gunicorn, non-root, only the files the app needs at runtime ---
+# --- prod: gunicorn + Postgres driver, non-root, only the files the app needs at runtime ---
 FROM base AS prod
-RUN pip install --no-cache-dir gunicorn
+COPY requirements-prod.txt ./
+RUN pip install --no-cache-dir -r requirements-prod.txt
 COPY --chown=app:app app.py schema.sql ./
 COPY --chown=app:app templates ./templates
 COPY --chown=app:app static ./static
 USER app
 EXPOSE 5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--access-logfile", "-", "app:app"]
+CMD ["gunicorn", "--preload", "--bind", "0.0.0.0:5000", "--workers", "2", "--access-logfile", "-", "app:app"]

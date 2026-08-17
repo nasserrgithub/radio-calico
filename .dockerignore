@@ -6,6 +6,7 @@ __pycache__
 .pytest_cache
 *.pyc
 *.db
+.env
 legacy-node
 .claude
 Dockerfile

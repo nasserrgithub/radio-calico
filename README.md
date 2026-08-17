@@ -3,7 +3,8 @@
 RadioCalico is a single-page live-radio player. A Flask backend renders one
 page that streams HLS audio via [hls.js](https://github.com/video-dev/hls.js/),
 shows now-playing metadata polled from an external CDN, and lets listeners
-thumbs-up/down the current track (persisted in SQLite).
+thumbs-up/down the current track (persisted in SQLite locally, Postgres in
+the Docker production deployment).
 
 ## Features
 
@@ -40,34 +41,58 @@ changes in a browser.
 
 ## Database
 
-Track ratings are stored in `radiocalico.db` (SQLite), created automatically
-on first run.
-
-## Docker
-
-The `Dockerfile` has two build targets, `dev` and `prod`, run via
-`docker-compose.yml` profiles:
+Locally and in the `dev` Docker profile, track ratings are stored in
+`radiocalico.db` (SQLite), created automatically on first run. `app.py`
+switches to Postgres whenever a `DATABASE_URL` environment variable is set —
+that only happens in the `prod` Docker profile, via `docker-compose.yml`.
 
 ```bash
-# dev: Flask debug server with reload, code bind-mounted from the repo
-docker compose --profile dev up --build
-
-# prod: gunicorn, non-root user, only the runtime files baked into the image
-docker compose --profile prod up --build -d
-```
-
-Both serve at `http://127.0.0.1:5000`. The SQLite file lives in a named
-volume (`/app/data/radiocalico.db`) so ratings persist across container
-recreation. Run the backend test suite inside the dev container with
-`docker compose --profile dev exec app-dev python -m pytest`.
-
-```bash
-# Inspect
+# Inspect the local SQLite db
 sqlite3 radiocalico.db ".tables"
 sqlite3 radiocalico.db ".schema ratings"
 
 # Reset (destructive — drops and recreates the ratings table)
 sqlite3 radiocalico.db < schema.sql
+```
+
+## Docker
+
+The `Dockerfile` has `dev` and `prod` build targets, run via
+`docker-compose.yml` profiles.
+
+**Dev** — Flask debug server with reload, code bind-mounted from the repo,
+SQLite in a named volume (`/app/data/radiocalico.db`):
+
+```bash
+docker compose --profile dev up --build
+```
+
+Serves at `http://127.0.0.1:5000`. Run the backend test suite inside it with
+`docker compose --profile dev exec app-dev python -m pytest`.
+
+**Prod** — gunicorn (non-root, only the runtime files baked into the image)
+behind nginx, backed by Postgres. Copy `.env.example` to `.env` and fill in
+real values first — `.env` is gitignored and is the only place the DB
+password lives:
+
+```bash
+cp .env.example .env   # then edit POSTGRES_PASSWORD etc.
+docker compose --profile prod up --build -d
+```
+
+This starts three containers:
+
+- `db` — Postgres 16, data in the `radiocalico-pgdata` named volume
+- `app-prod` — gunicorn running `app.py`, connects to `db` using
+  `DATABASE_URL` (built from the `.env` values in `docker-compose.yml`); not
+  reachable from the host directly
+- `nginx` — listens on `http://127.0.0.1:80`, serves `/static/*` directly
+  from files baked into its own image, and reverse-proxies `/` and `/api/*`
+  to `app-prod`
+
+```bash
+# Inspect the prod Postgres db
+docker compose --profile prod exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
 ```
 
 ## Architecture
@@ -81,7 +106,8 @@ sqlite3 radiocalico.db < schema.sql
   history.
 - `GET/POST /api/ratings` — reads/writes the `ratings` table. A rating is
   keyed on `(track_key, client_id)` with an upsert, so a listener can change
-  their vote but only has one active vote per track.
+  their vote but only has one active vote per track. Backend is SQLite or
+  Postgres depending on `DATABASE_URL` (see [Database](#database)).
 - Anonymous identity: a random token is set in a 2-year HttpOnly `rc_uid`
   cookie on first visit. `client_id` is a hash of IP + user agent + that
   token, which is how repeat ratings from the same browser are recognized
@@ -119,8 +145,12 @@ npm test
 ```
 app.py                      Flask app (routes, ratings, nowplaying proxy)
 schema.sql                  SQLite schema for the ratings table
+schema.postgres.sql         Postgres schema for the ratings table (prod)
 Dockerfile                  Multi-stage build: base / dev (Flask debug) / prod (gunicorn)
-docker-compose.yml          dev/prod profiles, port 5000, named volume for the DB
+docker-compose.yml          dev profile (SQLite) and prod profile (Postgres + nginx)
+nginx/                      nginx Dockerfile + reverse-proxy/static config for prod
+requirements-prod.txt       Extra prod-only deps (gunicorn, psycopg2-binary)
+.env.example                Template for prod Postgres credentials (copy to .env)
 tests/                      pytest suite for the Flask backend
 templates/index.html        Page markup
 static/css/style.css        Styling
