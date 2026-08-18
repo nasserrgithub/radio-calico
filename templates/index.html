@@ -6,14 +6,15 @@
   <title>Radio Calico — Live Stream</title>
   <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
   <nav>
     <span class="logo-badge">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Radio Calico logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Radio Calico logo" width="48" height="48">
     </span>
     <span class="brand">Radio Calico</span>
   </nav>
