@@ -9,6 +9,94 @@ it doubles as "how would I build this myself, one concept at a time."
 If you just want to run the app, see [README.md](README.md). This file
 explains *why* each piece exists.
 
+## System architecture diagram
+
+Everything below in one picture: the browser, the two CDNs it talks to
+directly, the production Docker stack (nginx/gunicorn/Postgres), the local
+dev setup, and the GitHub Actions CI pipeline that gates merges to
+`master`. Solid arrows are requests that happen on every page load;
+dashed arrows are dev-only or CI/deploy-time paths.
+
+```mermaid
+flowchart TB
+    subgraph Client["Listener's browser"]
+        UI["RadioCalico page<br/>index.html + app.js"]
+    end
+
+    subgraph External["External services (outside this repo)"]
+        CDN["Audio/metadata CDN (CloudFront)<br/>live.m3u8 + metadatav2.json"]
+        JSD["jsDelivr CDN<br/>hls.js@1.5.17 (SRI-pinned)"]
+    end
+
+    subgraph Prod["Production — docker compose --profile prod"]
+        direction TB
+        NGINX["nginx container<br/>only port published: 80"]
+        STATIC[["/static/* (CSS, JS, images)<br/>baked into nginx image"]]
+        APP["app-prod container<br/>gunicorn --preload, 2 workers<br/>running app.py"]
+        DB[("db container<br/>Postgres 16<br/>vol: radiocalico-pgdata")]
+        NGINX --> STATIC
+        NGINX -->|"proxy_pass / and /api/*"| APP
+        APP -->|"DATABASE_URL"| DB
+    end
+
+    subgraph Dev["Local dev — docker compose --profile dev, or bare .venv"]
+        DEVAPP["app-dev container / .venv<br/>Flask debug server, port 5000"]
+        SQLITE[("radiocalico.db<br/>SQLite")]
+        DEVAPP --> SQLITE
+    end
+
+    subgraph Repo["GitHub: nasserrgithub/radio-calico"]
+        PR["push / pull request"]
+    end
+
+    subgraph CI["GitHub Actions — .github/workflows/ci.yml"]
+        BACKEND["backend job<br/>pytest, pip-audit"]
+        FRONTEND["frontend job<br/>Vitest, npm audit"]
+    end
+
+    UI -->|"HLS stream + JSON polling"| CDN
+    UI -->|"script tag, integrity + crossorigin checked"| JSD
+    UI -->|"HTTP, port 80"| NGINX
+    UI -.->|"dev only, port 5000"| DEVAPP
+
+    APP -->|"server-side proxy fetch<br/>(CDN sends no CORS headers)"| CDN
+
+    PR --> BACKEND
+    PR --> FRONTEND
+    BACKEND -.->|"both must pass to merge"| PR
+    FRONTEND -.->|"both must pass to merge"| PR
+    PR -.->|"make prod (manual today;<br/>cd.yml planned)"| Prod
+
+    classDef ext fill:#F5EADA,stroke:#EFA63C,color:#231F20;
+    classDef prodStyle fill:#D8F2D5,stroke:#1F4E23,color:#231F20;
+    classDef devStyle fill:#E8E8E8,stroke:#888888,color:#231F20;
+    classDef ciStyle fill:#D6EFEC,stroke:#38A29D,color:#231F20;
+
+    class CDN,JSD ext;
+    class NGINX,STATIC,APP,DB prodStyle;
+    class DEVAPP,SQLITE devStyle;
+    class BACKEND,FRONTEND ciStyle;
+```
+
+A few things this diagram makes explicit that are easy to miss reading the
+config files one at a time:
+
+- **Only nginx is reachable from outside Docker in prod** — `app-prod`
+  `expose`s port 5000 to other containers on the same Docker network, but
+  nothing publishes it to the host, so there is exactly one public entry
+  point.
+- **The browser talks to two different third parties directly**, neither
+  of which is this project's own infrastructure: the audio/metadata CDN
+  (for the stream itself) and jsDelivr (for the hls.js library). Both
+  connections get a browser-side integrity guarantee — CORS headers don't
+  apply to `app.py`'s server-side proxy calls, but the `hls.js` `<script>`
+  tag is protected by SRI (§7) since that request *does* come straight
+  from the browser.
+- **CI gates the merge, not the deploy** — a green `backend`/`frontend`
+  job is what allows a PR to merge into `master`; nothing currently
+  triggers automatically *after* that merge (the dashed line into `Prod`
+  is today's manual `make prod`, not a real CD step — see §6).
+
 ## 1. The app itself, before any of this
 
 At its core RadioCalico is a Python web server (Flask) that:
