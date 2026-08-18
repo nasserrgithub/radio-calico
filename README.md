@@ -1,5 +1,7 @@
 # RadioCalico
 
+[![CI](https://github.com/nasserrgithub/radio-calico/actions/workflows/ci.yml/badge.svg)](https://github.com/nasserrgithub/radio-calico/actions/workflows/ci.yml)
+
 RadioCalico is a single-page live-radio player. A Flask backend renders one
 page that streams HLS audio via [hls.js](https://github.com/video-dev/hls.js/),
 shows now-playing metadata polled from an external CDN, and lets listeners
@@ -175,17 +177,43 @@ RadioCalicoLayout.png       Structural layout reference
 legacy-node/                Old Express/EJS/sqlite3 app, kept for reference only
 ```
 
-## CI
+## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push to
-`master`/`main` and on every pull request: backend tests + `pip-audit`
-(`make test-py`, `make security-py`) in one job, frontend tests + `npm
-audit` (`make test-js`, `make security-js`) in another.
+**CI (in place):** GitHub Actions (`.github/workflows/ci.yml`) runs on
+every push to `master`/`main` and on every pull request, in two parallel
+jobs:
+
+- **backend** — `make test-py` (pytest) then `make security-py`
+  (`pip-audit` against `requirements.txt`, `requirements-dev.txt`, and
+  `requirements-prod.txt`)
+- **frontend** — `make test-js` (Vitest) then `make security-js`
+  (`npm audit`)
+
+Either job failing blocks the PR from looking green, so a change can't get
+merged without passing tests and a clean dependency vulnerability scan.
 
 A `@claude` mention on a PR or issue comment triggers the Claude PR
-Assistant (`.github/workflows/claude.yml`) on demand — there is no automatic
-Claude code review on PRs anymore; that ran (and cost API usage) on every
-PR unconditionally, so it was removed.
+Assistant (`.github/workflows/claude.yml`) on demand. There is no automatic
+Claude code review running on every PR — that used to exist, ran (and cost
+API usage) unconditionally on every PR, and was removed for cost reasons.
+
+**CD (not yet implemented — planned next):** the CI pipeline stops at
+"tests and audits passed." Nothing currently builds or ships the app
+automatically. The pieces for that already exist in this repo
+(`Dockerfile`, `docker-compose.yml`, `make prod`) — they just aren't wired
+into a workflow yet. The planned next step is a `cd.yml` workflow,
+triggered on merge to `master`, that:
+
+1. Builds the `prod` and `nginx` Docker images (the same `docker compose
+   --profile prod build` used locally).
+2. Pushes them to a container registry (e.g. GHCR or Docker Hub).
+3. Deploys them somewhere reachable — either by triggering a pull/restart
+   on a running host (SSH, a webhook, an orchestrator like Kubernetes/Nomad)
+   or via a platform-specific deploy action, depending on where this ends
+   up hosted.
+
+That target host and its Postgres instance don't exist yet, so this stays
+a plan until there's a real place to deploy to.
 
 ## Notes
 
