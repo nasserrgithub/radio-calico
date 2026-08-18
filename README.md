@@ -101,6 +101,10 @@ docker compose --profile prod exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
 ## Architecture
 
+New to Docker/nginx/CI concepts, or want a plain-language walkthrough of
+*why* each infrastructure piece exists (not just what it does)? See
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 **Backend (`app.py`, single file):**
 
 - `GET /` — renders `templates/index.html` with the stream URL.
@@ -127,6 +131,13 @@ docker compose --profile prod exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 - `static/js/ratings.js` — pure ratings logic (track-key derivation, request
   building/response shaping, vote-change check) with no DOM dependency,
   imported by `app.js`
+- hls.js is loaded from the jsDelivr CDN with a pinned version, an
+  `integrity` (SRI) hash, and `crossorigin="anonymous"` on the `<script>`
+  tag, so the browser refuses to run the file if jsDelivr ever serves
+  something that doesn't match the hash. Bumping the hls.js version means
+  regenerating the hash for the new file (`curl` it and pipe through `openssl
+  dgst -sha384 -binary | openssl base64 -A`), not just editing the version
+  number in the URL.
 
 ## Testing
 
